@@ -1,12 +1,13 @@
 {
-    "display_name": "预设编辑器 (Preset Editor)",
+    "display_name": "Preset Lab / Prompt Debugger",
     "loading_order": 100,
     "requires": [],
     "optional": [],
     "js": "index.js",
     "css": "style.css",
+    "hooks": { "disable": "onDisable" },
     "author": "Jay & Claude",
-    "version": "1.10.0",
-    "homePage": "",
+    "version": "1.11.0",
+    "homePage": "https://github.com/liqiming-whu/SillyTavern-PresetLab",
     "auto_update": false
 }

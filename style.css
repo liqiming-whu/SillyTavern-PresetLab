@@ -216,6 +216,32 @@
 .pe-body { position: relative; }
 .pe-pane { padding:18px 22px; }
 .pe-pane.pe-hidden { display:none !important; }
+
+/* Final Context */
+#pe-modal [data-pane="final-context"] { color:var(--pe-text); font-family:var(--pe-sans); }
+.pe-fc-empty { padding:48px 12px; text-align:center; color:var(--pe-sub); }
+.pe-fc-summary, .pe-fc-message, .pe-fc-rank { background:var(--pe-card); border:1px solid var(--pe-border); border-radius:var(--pe-sm); }
+.pe-fc-summary { padding:18px; margin-bottom:12px; }
+.pe-fc-summary h2 { margin:0 0 8px; color:var(--pe-accent); }
+.pe-fc-meta { color:var(--pe-sub); font-size:12px; overflow-wrap:anywhere; }
+.pe-fc-stats, .pe-fc-actions, .pe-fc-views, .pe-fc-tools { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+.pe-fc-stats span { padding:9px 12px; border:1px solid var(--pe-border); border-radius:var(--pe-sm); }
+.pe-fc-stats b { color:var(--pe-accent); }
+.pe-fc-delta { padding:10px 12px; margin:10px 0; border-left:3px solid var(--pe-accent); background:var(--pe-card-hi); }
+.pe-fc-roles > div { display:grid; grid-template-columns:minmax(90px,1fr) 100px 70px; gap:8px; padding:5px 0; border-bottom:1px solid var(--pe-border); }
+.pe-fc-roles > div span { text-align:right; }
+.pe-fc-actions select { max-width:280px; color:var(--pe-text); background:var(--pe-card); border:1px solid var(--pe-border-strong); border-radius:var(--pe-sm); padding:7px; }
+.pe-fc-message { display:flex; align-items:flex-start; gap:8px; margin:6px 0; padding:8px; flex-wrap:wrap; }
+.pe-fc-row { flex:1; min-width:220px; display:flex; gap:12px; align-items:center; justify-content:space-between; color:var(--pe-text); background:transparent; border:0; text-align:left; cursor:pointer; padding:5px; }
+.pe-fc-row span { color:var(--pe-sub); font-size:12px; }
+.pe-fc-message .pe-fc-pre { flex-basis:100%; }
+.pe-fc-pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:70vh; overflow:auto; width:100%; padding:14px; color:var(--pe-text); background:var(--pe-input); border:1px solid var(--pe-border); border-radius:var(--pe-sm); font:12px/1.55 var(--pe-mono); }
+.pe-fc-rank { display:grid; grid-template-columns:minmax(120px,1fr) auto; gap:7px 12px; padding:10px; margin:6px 0; }
+.pe-fc-track { grid-column:1 / -1; height:6px; background:var(--pe-meter-track); border-radius:4px; overflow:hidden; }
+.pe-fc-track i { display:block; height:100%; background:var(--pe-accent); }
+.pe-fc-added { border-left:3px solid #6cc0a4; }
+.pe-fc-removed { border-left:3px solid #e08a76; }
+.pe-fc-modified { border-left:3px solid var(--pe-accent); }
 .pe-hidden { display:none !important; }
 
 /* 眉标 */

@@ -1,35 +1,63 @@
+# Preset Lab / Prompt Debugger · SillyTavern 扩展
+
+面向大型角色扮演与小说创作预设的编辑和最终上下文分析工具。当前版本：1.11.0。
+
+- [开发进展、实现结构与验证记录](docs/DEVELOPMENT.md)
+- [后续开发计划](docs/ROADMAP.md)
+- [GitHub 仓库](https://github.com/liqiming-whu/SillyTavern-PresetLab)
+
+## v1.11 · Final Context
+
+- 新增「最终上下文 / Final Context」：查看最近一次 Chat Completion 请求的消息、按角色统计、Token Ranking、Raw JSON、Markdown 导出，以及 Snapshot → 再生成 → Diff。
+- 捕获使用 SillyTavern 的 `CHAT_COMPLETION_SETTINGS_READY` 事件；只观察标准 Chat Completion 发送链，不修改请求或流式响应。
+- 普通文本消息优先使用 SillyTavern 的模型感知 `/api/tokenizers/openai/count`，失败时使用当前 tokenizer，再失败显示 `estimated`。多模态或工具结构无法由该接口可靠计量，按文本部分估算并标记 `estimated`。该数值不等同于提供商最终账单。
+- Snapshot 最多保留最近 10 份，存于当前浏览器的 `localStorage`；空间不足时保留能放下的最近记录。Raw 只导出 `messages[]`，不包含认证请求头或 API 配置；消息对象中若有明确的密钥字段名会脱敏。普通正文仍可能包含用户自行写入的敏感信息，导出前请检查。
+- 当前不追踪来源，也不执行 Dry Run。iframe 脚本直接发出的独立请求，以及其他扩展在此事件监听器之后改写的内容，可能不在捕获结果内。
+
 ## v1.9 更新（内置版对齐外置版）
 
 - **新增「缝合台」**：双栏拖拽——载入另一个预设或一本**世界书**作为左侧来源，拖 ⠿ 手柄把条目缝进当前预设的任意位置；右侧可上下拖动改顺序、启停、移除。世界书条目自动转成提示词条目（标题/内容/角色/@深度映射）。缝完点底部「保存」写回预设。
 - **新增「放大编辑」**：内容框旁 ⛶ 放大按钮，全屏大框编辑，实时同步回条目；缝合台左侧来源可放大查看。
 - 内置 SortableJS，手机长按手柄可拖。
 
-# 预设编辑器 (Preset Editor) · SillyTavern 扩展
-
 一个在 SillyTavern 内部直观编辑 / 新建「聊天补全(Chat Completion)预设」提示词条目的工具。
 
 ## 安装
 
-把整个 `preset-editor` 文件夹放到：
+推荐在 SillyTavern 的扩展安装界面填写本仓库地址：
+
+```text
+https://github.com/liqiming-whu/SillyTavern-PresetLab
+```
+
+手动安装时，将完整仓库放入当前用户的数据目录 `extensions/SillyTavern-PresetLab/`，或使用全局路径：
 
 ```
-SillyTavern/public/scripts/extensions/third-party/preset-editor/
+SillyTavern/public/scripts/extensions/third-party/SillyTavern-PresetLab/
 ```
 
-然后刷新浏览器。在右上角「魔棒(扩展)菜单」里会出现 **预设编辑器** 入口（若菜单里没有，会在右下角出现一个浮动圆钮作为回退）。
+然后刷新浏览器。在右上角「魔棒(扩展)菜单」里会出现 **Preset Lab** 入口（若菜单里没有，会在右下角出现一个浮动圆钮作为回退）。
 
 > 也可以用 SillyTavern 设置里的「Install extension」从 Git 仓库安装，效果相同。
+
+## 来源与许可证
+
+本项目基于 [ghostboyfriends/SillyTavern-PresetEditor](https://github.com/ghostboyfriends/SillyTavern-PresetEditor)，保留上游 Git 历史、作者信息和 GNU AGPL v3 许可证。Preset Lab 改动始于 2026-09-29，独立仓库整理于 2026-10-03。
+
+最终请求捕获与模型感知 tokenizer 的实现思路参考 [SkyJinXX/SillyTavern-FinalPromptViewer](https://github.com/SkyJinXX/SillyTavern-FinalPromptViewer)，并根据本地 SillyTavern 源码核对接口。原有内嵌 SortableJS 的 MIT 许可声明保留在源码中。完整许可证见 [LICENSE](LICENSE)。
 
 ## 使用前提
 
 - 当前 API 需切换到 **Chat Completion（聊天补全）** 模式，且已选中一个预设。
 - 若提示「未找到预设数据」，多半是当前为 Text Completion 模式。
 
-## 三个标签页
+## 标签页
 
 1. **编辑器** — 列出当前预设全部条目：拖动手柄排序、开关启用、展开编辑（名称 / 角色 / 位置 / 深度 / 内容 / 禁止覆盖）、复制、删除、新建、重新添加已移除的条目、搜索过滤。
 2. **教程** — 逐项解释每个字段与占位符的含义和效果（条目里的小问号「?」会跳转到对应讲解）。
 3. **思维链预览** — 按 AI 实际读取顺序自上而下展示；绝对(@深度)条目会可视化地插进「聊天记录」内部。
+4. **缝合台 / 世界书缝合** — 将其他预设或世界书条目整理到当前预设。
+5. **最终上下文 / Final Context** — 先生成一次以捕获消息；保存 Snapshot，改动并应用预设，再次生成后选择该 Snapshot，在 Diff 中查看 token 和消息级变化。
 
 ## 保存
 

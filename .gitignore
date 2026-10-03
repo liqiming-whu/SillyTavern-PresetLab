@@ -1,0 +1,7 @@
+/node_modules/
+/.st-smoke-data/
+/test-artifacts/
+.env
+.env.*
+!.env.example
+*.log

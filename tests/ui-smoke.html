@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="../style.css">
+<div id="pe-modal"><div class="pe-pane" data-pane="final-context"></div></div>
+<output id="result">RUNNING</output>
+<script type="module">
+import { createFinalContext } from '../final-context/ui.mjs';
+
+let listener;
+const eventSource = { on: (_, callback) => { listener = callback; }, removeListener: () => {} };
+window.fetch = async () => ({ ok: true, json: async () => ({ token_count: 12 }) });
+const ui = createFinalContext({ eventSource, eventType: 'ready', headers: () => ({}), getTokenCountAsync: async () => 12 });
+const pane = document.querySelector('[data-pane="final-context"]');
+const result = document.getElementById('result');
+const wait = () => new Promise(resolve => setTimeout(resolve, 30));
+try {
+    ui.mount(pane);
+    if (!pane.textContent.includes('尚未捕获最终上下文')) throw Error('empty state');
+    listener({ model: 'smoke-model', chat_completion_source: 'openai', messages: [
+        { role: 'system', content: 'Original preset prompt' },
+        { role: 'user', content: 'Original question' },
+    ] });
+    await wait();
+    if (!pane.textContent.includes('24')) throw Error('summary');
+    pane.querySelector('[data-action="snapshot"]').click();
+    listener({ model: 'smoke-model', chat_completion_source: 'openai', stream: true, messages: [
+        { role: 'system', content: 'Edited preset prompt' },
+        { role: 'user', content: 'Original question' },
+    ] });
+    await wait();
+    pane.querySelector('[data-view="diff"]').click();
+    if (!pane.textContent.includes('MODIFIED')) throw Error('diff');
+    pane.querySelector('[data-view="messages"]').click();
+    pane.querySelector('[data-action="expand"]').click();
+    if (!pane.textContent.includes('Edited preset prompt')) throw Error('expand');
+    pane.querySelector('[data-view="raw"]').click();
+    if (!pane.textContent.includes('Edited preset prompt')) throw Error('raw');
+    const largeMessages = Array.from({ length: 700 }, (_, index) => ({ role: index % 2 ? 'user' : 'assistant', content: `history ${index} ` + 'fiction '.repeat(120) }));
+    largeMessages.splice(350, 0, { role: 'system', content: 'large world entry '.repeat(10000) });
+    listener({ model: 'smoke-model', messages: largeMessages });
+    await wait();
+    pane.querySelector('[data-view="messages"]').click();
+    if (pane.querySelectorAll('[data-action="expand"]').length !== 701) throw Error('large history rows');
+    if (pane.querySelectorAll('.pe-fc-pre').length) throw Error('large history should start collapsed');
+    result.textContent = 'PASS: empty state, capture, token summary, snapshot, diff, expand, raw, streaming flag, large history';
+} catch (error) {
+    result.textContent = `FAIL: ${error.message}`;
+}
+</script>

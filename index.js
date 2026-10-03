@@ -8,11 +8,12 @@
  *  3. 思维链预览：按 AI 实际读取的顺序，自上而下展示条目排列(含绝对深度注入的可视化)。
  *  4. 保存：应用到当前会话 + 尝试写回命名预设；另支持导出/导入 JSON。
  *
- * 说明:本扩展只编辑「提示词条目」部分。采样参数(温度/top_p 等)请在 SillyTavern 原生面板调整。
+ * 说明:预设编辑只修改提示词条目；最终上下文分析只读取生成请求。
  */
 
 import { eventSource, event_types } from "../../../../script.js";
 import { getContext } from "../../../extensions.js";
+import { createFinalContext } from "./final-context/ui.mjs";
 
 /* ===== 内嵌 SortableJS 1.15.7 (MIT) —— 缝合台拖拽 ===== */
 /*! Sortable 1.15.7 - MIT | git://github.com/SortableJS/Sortable.git */
@@ -20,7 +21,7 @@ import { getContext } from "../../../extensions.js";
 
 
 const EXT_ID = "preset-editor";
-const LABEL = "预设编辑器";
+const LABEL = "Preset Lab";
 
 // ----- 运行时依赖(动态加载，失败也不会让扩展崩溃) -----
 let _oai = null;            // oai_settings
@@ -32,6 +33,11 @@ let _saveSettingsDebounced = null;
 let _extSettings = {};
 let _callGenericPopup = null;
 let _POPUP_TYPE = null;
+let _finalContext = null;
+export function onDisable() {
+    _finalContext?.stop();
+    _finalContext = null;
+}
 
 // 工作副本(编辑中的状态，未应用前不写回真实设置)
 let state = {
@@ -868,7 +874,7 @@ function openEditor() {
         <div class="pe-header">
           <div class="pe-brand">
             <span class="pe-mark"><i class="fa-solid fa-layer-group"></i></span>
-            <span class="pe-brand-txt"><b class="pe-title-main">预设编辑器</b><span class="pe-brand-en">Preset Editor</span></span>
+            <span class="pe-brand-txt"><b class="pe-title-main">Preset Lab</b><span class="pe-brand-en">Prompt Debugger</span></span>
           </div>
           <div class="pe-tabs">
             <button class="pe-tab pe-active" data-tab="editor">编辑器</button>
@@ -876,6 +882,7 @@ function openEditor() {
             <button class="pe-tab" data-tab="wbstitch">世界书缝合</button>
             <button class="pe-tab" data-tab="tutorial">教程</button>
             <button class="pe-tab" data-tab="preview">思维链预览</button>
+            <button class="pe-tab" data-tab="final-context">最终上下文 / Final Context</button>
           </div>
           <div class="pe-themes">
             <span class="pe-theme-cur" id="pe-theme-cur"></span>
@@ -899,6 +906,7 @@ function openEditor() {
           <div class="pe-pane pe-hidden" data-pane="wbstitch"></div>
           <div class="pe-pane pe-hidden" data-pane="tutorial"></div>
           <div class="pe-pane pe-hidden" data-pane="preview"></div>
+          <div class="pe-pane pe-hidden" data-pane="final-context"></div>
         </div>
         <div class="pe-footer">
           <div class="pe-footer-left">
@@ -941,9 +949,11 @@ function openEditor() {
             if (tab === "preview") renderPreview();
             if (tab === "bench") renderBench();
             if (tab === "wbstitch") renderWb();
+            if (tab === "final-context") _finalContext?.mount(overlay.querySelector('[data-pane="final-context"]'));
             // 底部按钮跟随标签：世界书缝合页显示世界书的保存/导出，避免误按预设保存
             const fp = overlay.querySelector("#pe-footer-preset"), fw = overlay.querySelector("#pe-footer-wb");
-            if (fp && fw) { const isWb = tab === "wbstitch"; fp.classList.toggle("pe-hidden", isWb); fw.classList.toggle("pe-hidden", !isWb); }
+            if (fp && fw) { const isWb = tab === "wbstitch", isFinal = tab === "final-context"; fp.classList.toggle("pe-hidden", isWb || isFinal); fw.classList.toggle("pe-hidden", !isWb); }
+            overlay.querySelector(".pe-footer")?.classList.toggle("pe-hidden", tab === "final-context");
             if (tab === "tutorial") renderTutorial();
         });
     });
@@ -1691,9 +1701,20 @@ function injectLaunchButton() {
     }
 }
 
+let _initStarted = false;
 async function init() {
+    if (_initStarted) return;
+    _initStarted = true;
     await loadDeps();
     await loadTokenizer();
+    if (!_finalContext && eventSource && event_types?.CHAT_COMPLETION_SETTINGS_READY) {
+        _finalContext = createFinalContext({
+            eventSource, eventType: event_types.CHAT_COMPLETION_SETTINGS_READY,
+            headers: () => _getRequestHeaders?.() || { 'Content-Type': 'application/json' },
+            getTokenCountAsync: text => _tokenCounter?.(text),
+            notify: toast,
+        });
+    }
     injectLaunchButton();
     // 菜单有时是延迟渲染的，补一次
     setTimeout(injectLaunchButton, 1500);
